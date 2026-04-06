@@ -6,6 +6,7 @@ import { useKitchen } from '../../contexts/KitchenContext';
 import { KitchenSetup } from '../onboarding/KitchenSetup';
 import { KitchenEdit } from './KitchenEdit';
 import { HouseholdMembersView } from '../household/HouseholdMembersView';
+import { DietaryGoalsView } from '../dietary/DietaryGoalsView';
 
 export function SettingsView() {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ export function SettingsView() {
   const [showKitchenSetup, setShowKitchenSetup] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [showMembersView, setShowMembersView] = useState(false);
+  const [showDietaryGoals, setShowDietaryGoals] = useState(false);
 
   useEffect(() => {
     fetchLocations();
@@ -28,6 +30,10 @@ export function SettingsView() {
       }
     }
   };
+
+  if (showDietaryGoals) {
+    return <DietaryGoalsView onBack={() => setShowDietaryGoals(false)} />;
+  }
 
   if (showMembersView) {
     return (
@@ -263,8 +269,8 @@ export function SettingsView() {
 
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="bg-purple-100 p-2 rounded-lg">
-              <Target size={20} className="text-purple-600" />
+            <div className="bg-teal-100 p-2 rounded-lg">
+              <Target size={20} className="text-teal-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Dietary Goals</h3>
           </div>
@@ -272,7 +278,10 @@ export function SettingsView() {
             <p className="text-sm text-gray-600">
               Configure your dietary preferences, restrictions, and goals to get personalized recipe suggestions.
             </p>
-            <button className="w-full py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => setShowDietaryGoals(true)}
+              className="w-full py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            >
               Manage Dietary Goals
             </button>
           </div>
