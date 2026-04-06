@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useKitchen } from '../../contexts/KitchenContext';
 import { KitchenSetup } from '../onboarding/KitchenSetup';
+import { KitchenEdit } from './KitchenEdit';
 
 export function SettingsView() {
   const { user } = useAuth();
@@ -26,23 +27,39 @@ export function SettingsView() {
     }
   };
 
+  if (editingLocation) {
+    return (
+      <div>
+        <button
+          onClick={() => setEditingLocation(null)}
+          className="mb-4 text-orange-600 hover:text-orange-700 font-medium"
+        >
+          ← Back to Settings
+        </button>
+        <KitchenEdit
+          location={editingLocation}
+          onSave={() => {
+            setEditingLocation(null);
+            fetchLocations();
+          }}
+          onCancel={() => setEditingLocation(null)}
+        />
+      </div>
+    );
+  }
+
   if (showKitchenSetup) {
     return (
       <div>
         <button
-          onClick={() => {
-            setShowKitchenSetup(false);
-            setEditingLocation(null);
-          }}
+          onClick={() => setShowKitchenSetup(false)}
           className="mb-4 text-orange-600 hover:text-orange-700 font-medium"
         >
           ← Back to Settings
         </button>
         <KitchenSetup
-          initialLocation={editingLocation || undefined}
           onComplete={() => {
             setShowKitchenSetup(false);
-            setEditingLocation(null);
             fetchLocations();
           }}
         />
@@ -199,10 +216,7 @@ export function SettingsView() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setEditingLocation(loc.location);
-                        setShowKitchenSetup(true);
-                      }}
+                      onClick={() => setEditingLocation(loc.location)}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Edit kitchen"
                     >
