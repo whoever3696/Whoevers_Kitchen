@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
-import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2 } from 'lucide-react';
+import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useKitchen } from '../../contexts/KitchenContext';
 import { KitchenSetup } from '../onboarding/KitchenSetup';
 import { KitchenEdit } from './KitchenEdit';
+import { HouseholdMembersView } from '../household/HouseholdMembersView';
 
 export function SettingsView() {
   const { user } = useAuth();
-  const { household, members } = useHousehold();
+  const { household, members, dependents } = useHousehold();
   const { locations, loading, fetchLocations, deleteKitchenLocation } = useKitchen();
   const [showKitchenSetup, setShowKitchenSetup] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
+  const [showMembersView, setShowMembersView] = useState(false);
 
   useEffect(() => {
     fetchLocations();
@@ -26,6 +28,20 @@ export function SettingsView() {
       }
     }
   };
+
+  if (showMembersView) {
+    return (
+      <div>
+        <button
+          onClick={() => setShowMembersView(false)}
+          className="mb-4 text-green-600 hover:text-green-700 font-medium"
+        >
+          ← Back to Settings
+        </button>
+        <HouseholdMembersView />
+      </div>
+    );
+  }
 
   if (editingLocation) {
     return (
@@ -167,7 +183,16 @@ export function SettingsView() {
               </div>
             </div>
             <div>
-              <p className="text-sm text-gray-600 mb-2">Household Members: {members.length}</p>
+              <p className="text-sm text-gray-600 mb-2">
+                Total Members: {members.length + dependents.length} ({members.length} with accounts, {dependents.length} family members)
+              </p>
+              <button
+                onClick={() => setShowMembersView(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                <Users size={16} />
+                Manage Members
+              </button>
             </div>
           </div>
         </div>

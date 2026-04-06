@@ -239,6 +239,38 @@ export interface Database {
           updated_at?: string
         }
       }
+      household_dependents: {
+        Row: {
+          id: string
+          household_id: string
+          name: string
+          age_group: 'child' | 'teen' | 'adult' | null
+          dietary_restrictions: string | null
+          added_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          household_id: string
+          name: string
+          age_group?: 'child' | 'teen' | 'adult' | null
+          dietary_restrictions?: string | null
+          added_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          household_id?: string
+          name?: string
+          age_group?: 'child' | 'teen' | 'adult' | null
+          dietary_restrictions?: string | null
+          added_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
       household_members: {
         Row: {
           id: string
