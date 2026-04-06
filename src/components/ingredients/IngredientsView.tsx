@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, CreditCard as Edit2, Trash2, AlertCircle, Search, Sparkles } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, AlertCircle, Search, Sparkles, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { useIngredient } from '../../contexts/IngredientContext';
+import { useGrocery } from '../../contexts/GroceryContext';
 import { AddIngredientModal } from './AddIngredientModal';
 import { QuickAddModal } from './QuickAddModal';
 
@@ -8,6 +9,7 @@ type StorageTab = 'all' | 'pantry' | 'fridge' | 'freezer';
 
 export function IngredientsView() {
   const { householdIngredients, loading, fetchHouseholdIngredients, deleteIngredient } = useIngredient();
+  const { addGroceryItem } = useGrocery();
   const [activeTab, setActiveTab] = useState<StorageTab>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -29,6 +31,39 @@ export function IngredientsView() {
         await deleteIngredient(id);
       } catch (error) {
         alert('Failed to delete ingredient. Please try again.');
+      }
+    }
+  };
+
+  const handleRunningLow = async (ingredient: any) => {
+    try {
+      await addGroceryItem({
+        ingredientId: ingredient.ingredient_id,
+        customItemName: ingredient.custom_name,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        notes: 'Running low',
+      });
+      alert(`${ingredient.ingredient_name} added to grocery list`);
+    } catch (error) {
+      alert('Failed to add to grocery list. Please try again.');
+    }
+  };
+
+  const handleOutOfStock = async (ingredient: any) => {
+    if (confirm(`Mark ${ingredient.ingredient_name} as out of stock? This will remove it from inventory and add it to your grocery list.`)) {
+      try {
+        await addGroceryItem({
+          ingredientId: ingredient.ingredient_id,
+          customItemName: ingredient.custom_name,
+          quantity: ingredient.quantity,
+          unit: ingredient.unit,
+          notes: 'Out of stock',
+        });
+        await deleteIngredient(ingredient.id);
+        alert(`${ingredient.ingredient_name} removed from inventory and added to grocery list`);
+      } catch (error) {
+        alert('Failed to process out of stock. Please try again.');
       }
     }
   };
@@ -206,13 +241,27 @@ export function IngredientsView() {
                               <h4 className="font-semibold text-gray-900">{ingredient.ingredient_name}</h4>
                               <p className="text-sm text-gray-600 capitalize">{ingredient.ingredient_category}</p>
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap">
                               <button
                                 onClick={() => handleEdit(ingredient)}
                                 className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                                 title="Edit"
                               >
-                                <Edit2 size={16} />
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleRunningLow(ingredient)}
+                                className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                                title="Running Low - Add to grocery list"
+                              >
+                                <AlertTriangle size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleOutOfStock(ingredient)}
+                                className="p-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                                title="Out of Stock - Remove and add to grocery list"
+                              >
+                                <ShoppingCart size={16} />
                               </button>
                               <button
                                 onClick={() => handleDelete(ingredient.id, ingredient.ingredient_name || 'ingredient')}
@@ -263,13 +312,27 @@ export function IngredientsView() {
                           <h4 className="font-semibold text-gray-900">{ingredient.ingredient_name}</h4>
                           <p className="text-sm text-gray-600 capitalize">{ingredient.ingredient_category}</p>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap">
                           <button
                             onClick={() => handleEdit(ingredient)}
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                             title="Edit"
                           >
-                            <Edit2 size={16} />
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleRunningLow(ingredient)}
+                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                            title="Running Low - Add to grocery list"
+                          >
+                            <AlertTriangle size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleOutOfStock(ingredient)}
+                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                            title="Out of Stock - Remove and add to grocery list"
+                          >
+                            <ShoppingCart size={16} />
                           </button>
                           <button
                             onClick={() => handleDelete(ingredient.id, ingredient.ingredient_name || 'ingredient')}
