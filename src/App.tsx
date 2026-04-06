@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HouseholdProvider, useHousehold } from './contexts/HouseholdContext';
 import { KitchenProvider } from './contexts/KitchenContext';
 import { IngredientProvider } from './contexts/IngredientContext';
+import { GroceryProvider } from './contexts/GroceryContext';
 import { AuthPage } from './components/auth/AuthPage';
 import { HouseholdSetup } from './components/onboarding/HouseholdSetup';
 import { Navigation } from './components/layout/Navigation';
@@ -83,7 +84,9 @@ function App() {
       <HouseholdProvider>
         <KitchenProvider>
           <IngredientProvider>
-            <AppContent />
+            <GroceryProvider>
+              <AppContent />
+            </GroceryProvider>
           </IngredientProvider>
         </KitchenProvider>
       </HouseholdProvider>
