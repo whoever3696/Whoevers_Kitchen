@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, CreditCard as Edit2, Trash2, AlertCircle, Search } from 'lucide-react';
+import { Package, Plus, CreditCard as Edit2, Trash2, AlertCircle, Search, Sparkles } from 'lucide-react';
 import { useIngredient } from '../../contexts/IngredientContext';
 import { AddIngredientModal } from './AddIngredientModal';
+import { QuickAddModal } from './QuickAddModal';
 
 type StorageTab = 'all' | 'pantry' | 'fridge' | 'freezer';
 
@@ -9,6 +10,7 @@ export function IngredientsView() {
   const { householdIngredients, loading, fetchHouseholdIngredients, deleteIngredient } = useIngredient();
   const [activeTab, setActiveTab] = useState<StorageTab>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -305,12 +307,18 @@ export function IngredientsView() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-1">Quick Add</h4>
+        <button
+          onClick={() => setIsQuickAddOpen(true)}
+          className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 text-left hover:bg-blue-100 hover:border-blue-300 transition-all group"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles className="text-blue-600 group-hover:scale-110 transition-transform" size={20} />
+            <h4 className="font-semibold text-blue-900">Quick Add</h4>
+          </div>
           <p className="text-sm text-blue-700">
             Add common staple ingredients quickly with smart defaults
           </p>
-        </div>
+        </button>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <h4 className="font-semibold text-green-900 mb-1">Track Expiration</h4>
           <p className="text-sm text-green-700">
@@ -329,6 +337,11 @@ export function IngredientsView() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         editingIngredient={editingIngredient}
+      />
+
+      <QuickAddModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
       />
     </div>
   );
