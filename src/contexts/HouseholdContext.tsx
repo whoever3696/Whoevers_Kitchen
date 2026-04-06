@@ -89,7 +89,14 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         .select()
         .single();
 
-      if (householdError) throw householdError;
+      if (householdError) {
+        console.error('Household creation error:', householdError);
+        throw householdError;
+      }
+
+      if (!householdData) {
+        throw new Error('Failed to create household: No data returned');
+      }
 
       const { error: memberError } = await supabase
         .from('household_members')
@@ -99,11 +106,15 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
           role: 'admin',
         });
 
-      if (memberError) throw memberError;
+      if (memberError) {
+        console.error('Member creation error:', memberError);
+        throw memberError;
+      }
 
       await fetchHousehold();
       return { error: null };
     } catch (error) {
+      console.error('Create household failed:', error);
       return { error: error as Error };
     }
   };
