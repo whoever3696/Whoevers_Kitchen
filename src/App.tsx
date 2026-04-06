@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { HouseholdProvider, useHousehold } from './contexts/HouseholdContext';
+import { KitchenProvider } from './contexts/KitchenContext';
 import { AuthPage } from './components/auth/AuthPage';
 import { HouseholdSetup } from './components/onboarding/HouseholdSetup';
 import { Navigation } from './components/layout/Navigation';
@@ -79,7 +80,9 @@ function App() {
   return (
     <AuthProvider>
       <HouseholdProvider>
-        <AppContent />
+        <KitchenProvider>
+          <AppContent />
+        </KitchenProvider>
       </HouseholdProvider>
     </AuthProvider>
   );

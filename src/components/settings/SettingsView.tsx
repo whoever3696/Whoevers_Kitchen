@@ -1,10 +1,54 @@
-import { User, Home, Target, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
+import { useKitchen } from '../../contexts/KitchenContext';
+import { KitchenSetup } from '../onboarding/KitchenSetup';
 
 export function SettingsView() {
   const { user } = useAuth();
   const { household, members } = useHousehold();
+  const { locations, loading, fetchLocations, deleteKitchenLocation } = useKitchen();
+  const [showKitchenSetup, setShowKitchenSetup] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLocations();
+  }, [fetchLocations]);
+
+  const handleDeleteLocation = async (location: string) => {
+    if (confirm(`Are you sure you want to delete the "${location}" kitchen? This will remove all associated appliances and implements.`)) {
+      try {
+        await deleteKitchenLocation(location);
+      } catch (error) {
+        alert('Failed to delete kitchen location. Please try again.');
+      }
+    }
+  };
+
+  if (showKitchenSetup) {
+    return (
+      <div>
+        <button
+          onClick={() => {
+            setShowKitchenSetup(false);
+            setEditingLocation(null);
+          }}
+          className="mb-4 text-orange-600 hover:text-orange-700 font-medium"
+        >
+          ← Back to Settings
+        </button>
+        <KitchenSetup
+          initialLocation={editingLocation || undefined}
+          onComplete={() => {
+            setShowKitchenSetup(false);
+            setEditingLocation(null);
+            fetchLocations();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,6 +152,73 @@ export function SettingsView() {
             <div>
               <p className="text-sm text-gray-600 mb-2">Household Members: {members.length}</p>
             </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <ChefHat size={20} className="text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Kitchen Locations</h3>
+            </div>
+            <button
+              onClick={() => setShowKitchenSetup(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors"
+            >
+              <Plus size={16} />
+              Add Kitchen
+            </button>
+          </div>
+          <div className="space-y-3">
+            {loading && locations.length === 0 ? (
+              <p className="text-sm text-gray-600">Loading kitchens...</p>
+            ) : locations.length === 0 ? (
+              <div className="text-center py-8">
+                <ChefHat size={48} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-600 mb-4">No kitchens set up yet</p>
+                <button
+                  onClick={() => setShowKitchenSetup(true)}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors"
+                >
+                  Set Up Your First Kitchen
+                </button>
+              </div>
+            ) : (
+              locations.map((loc) => (
+                <div
+                  key={loc.location}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  <div>
+                    <h4 className="font-semibold text-gray-900">{loc.location}</h4>
+                    <p className="text-sm text-gray-600">
+                      {loc.applianceCount} appliances, {loc.implementCount} tools
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setEditingLocation(loc.location);
+                        setShowKitchenSetup(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit kitchen"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteLocation(loc.location)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete kitchen"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

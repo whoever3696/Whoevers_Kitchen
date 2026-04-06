@@ -135,6 +135,7 @@ export interface Database {
           appliance_id: string | null
           custom_name: string | null
           details: Json
+          location: string
           added_by: string | null
           created_at: string
           updated_at: string
@@ -145,6 +146,7 @@ export interface Database {
           appliance_id?: string | null
           custom_name?: string | null
           details?: Json
+          location?: string
           added_by?: string | null
           created_at?: string
           updated_at?: string
@@ -155,6 +157,7 @@ export interface Database {
           appliance_id?: string | null
           custom_name?: string | null
           details?: Json
+          location?: string
           added_by?: string | null
           created_at?: string
           updated_at?: string
@@ -167,6 +170,7 @@ export interface Database {
           implement_id: string | null
           custom_name: string | null
           quantity: number
+          location: string
           added_by: string | null
           created_at: string
           updated_at: string
@@ -177,6 +181,7 @@ export interface Database {
           implement_id?: string | null
           custom_name?: string | null
           quantity?: number
+          location?: string
           added_by?: string | null
           created_at?: string
           updated_at?: string
@@ -187,6 +192,7 @@ export interface Database {
           implement_id?: string | null
           custom_name?: string | null
           quantity?: number
+          location?: string
           added_by?: string | null
           created_at?: string
           updated_at?: string

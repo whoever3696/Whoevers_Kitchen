@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { Home, Users, ArrowRight } from 'lucide-react';
+import { KitchenSetup } from './KitchenSetup';
 
 interface HouseholdSetupProps {
   onComplete: () => void;
 }
 
 export function HouseholdSetup({ onComplete }: HouseholdSetupProps) {
-  const [mode, setMode] = useState<'choose' | 'create' | 'join'>('choose');
+  const [mode, setMode] = useState<'choose' | 'create' | 'join' | 'kitchen'>('choose');
   const [householdName, setHouseholdName] = useState('');
   const [travelTime, setTravelTime] = useState(15);
   const [invitationCode, setInvitationCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
   const { createHousehold, joinHousehold } = useHousehold();
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -26,7 +28,8 @@ export function HouseholdSetup({ onComplete }: HouseholdSetupProps) {
       setError(error.message);
       setLoading(false);
     } else {
-      onComplete();
+      setIsCreator(true);
+      setMode('kitchen');
     }
   };
 
@@ -41,9 +44,14 @@ export function HouseholdSetup({ onComplete }: HouseholdSetupProps) {
       setError(error.message);
       setLoading(false);
     } else {
+      setIsCreator(false);
       onComplete();
     }
   };
+
+  if (mode === 'kitchen') {
+    return <KitchenSetup onComplete={onComplete} />;
+  }
 
   if (mode === 'choose') {
     return (
