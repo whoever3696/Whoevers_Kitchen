@@ -10,6 +10,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  resendVerificationEmail: () => Promise<{ error: Error | null }>;
+  isEmailVerified: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,11 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsEmailVerified(session?.user?.email_confirmed_at !== undefined && session?.user?.email_confirmed_at !== null);
       setLoading(false);
     });
 
@@ -30,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (async () => {
         setSession(session);
         setUser(session?.user ?? null);
+        setIsEmailVerified(session?.user?.email_confirmed_at !== undefined && session?.user?.email_confirmed_at !== null);
         setLoading(false);
       })();
     });
@@ -91,6 +96,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const resendVerificationEmail = async () => {
+    try {
+      if (!user?.email) {
+        throw new Error('No email address found');
+      }
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -101,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         resetPassword,
+        resendVerificationEmail,
+        isEmailVerified,
       }}
     >
       {children}

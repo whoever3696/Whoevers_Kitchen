@@ -6,6 +6,7 @@ import { IngredientProvider } from './contexts/IngredientContext';
 import { GroceryProvider } from './contexts/GroceryContext';
 import { DietaryGoalsProvider } from './contexts/DietaryGoalsContext';
 import { AuthPage } from './components/auth/AuthPage';
+import { VerificationBanner } from './components/auth/VerificationBanner';
 import { HouseholdSetup } from './components/onboarding/HouseholdSetup';
 import { Navigation } from './components/layout/Navigation';
 import { Dashboard } from './components/dashboard/Dashboard';
@@ -71,6 +72,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      <VerificationBanner />
       <Navigation currentView={currentView} onViewChange={setCurrentView} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderView()}

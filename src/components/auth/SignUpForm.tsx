@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Mail } from 'lucide-react';
 
 interface SignUpFormProps {
   onToggleMode: () => void;
@@ -12,11 +12,13 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showVerificationNotice, setShowVerificationNotice] = useState(false);
   const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowVerificationNotice(false);
     setLoading(true);
 
     if (password.length < 6) {
@@ -29,6 +31,9 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
 
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else {
+      setShowVerificationNotice(true);
       setLoading(false);
     }
   };
@@ -44,6 +49,21 @@ export function SignUpForm({ onToggleMode }: SignUpFormProps) {
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
             {error}
+          </div>
+        )}
+
+        {showVerificationNotice && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Mail size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-900">
+                <p className="font-medium mb-1">Verification email sent!</p>
+                <p>
+                  Check your inbox to verify your email address. You can start using the app now,
+                  but you won't be able to reset your password without a verified email.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

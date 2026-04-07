@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2, Users } from 'lucide-react';
+import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2, Users, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useKitchen } from '../../contexts/KitchenContext';
@@ -9,17 +9,32 @@ import { HouseholdMembersView } from '../household/HouseholdMembersView';
 import { DietaryGoalsView } from '../dietary/DietaryGoalsView';
 
 export function SettingsView() {
-  const { user } = useAuth();
+  const { user, isEmailVerified, resendVerificationEmail } = useAuth();
   const { household, members, dependents } = useHousehold();
   const { locations, loading, fetchLocations, deleteKitchenLocation } = useKitchen();
   const [showKitchenSetup, setShowKitchenSetup] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
   const [showMembersView, setShowMembersView] = useState(false);
   const [showDietaryGoals, setShowDietaryGoals] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
 
   useEffect(() => {
     fetchLocations();
   }, [fetchLocations]);
+
+  const handleResendVerification = async () => {
+    setSendingVerification(true);
+    setVerificationMessage('');
+    const { error } = await resendVerificationEmail();
+    setSendingVerification(false);
+
+    if (error) {
+      setVerificationMessage('Failed to send verification email. Please try again.');
+    } else {
+      setVerificationMessage('Verification email sent! Check your inbox.');
+    }
+  };
 
   const handleDeleteLocation = async (location: string) => {
     if (confirm(`Are you sure you want to delete the "${location}" kitchen? This will remove all associated appliances and implements.`)) {
@@ -109,12 +124,47 @@ export function SettingsView() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
-              <input
-                type="email"
-                value={user?.email || ''}
-                disabled
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-              />
+              <div className="space-y-2">
+                <input
+                  type="email"
+                  value={user?.email || ''}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                />
+                <div className="flex items-start gap-2">
+                  {isEmailVerified ? (
+                    <div className="flex items-center gap-2 text-green-700 text-sm">
+                      <CheckCircle size={16} className="flex-shrink-0" />
+                      <span className="font-medium">Verified</span>
+                    </div>
+                  ) : (
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2 text-amber-700 text-sm">
+                        <AlertCircle size={16} className="flex-shrink-0" />
+                        <span className="font-medium">Not verified</span>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <p className="text-sm text-amber-900 mb-2">
+                          You won't be able to reset your password without a verified email.
+                        </p>
+                        {verificationMessage && (
+                          <p className={`text-sm mb-2 font-medium ${verificationMessage.includes('Failed') ? 'text-red-700' : 'text-green-700'}`}>
+                            {verificationMessage}
+                          </p>
+                        )}
+                        <button
+                          onClick={handleResendVerification}
+                          disabled={sendingVerification}
+                          className="flex items-center gap-1.5 text-sm font-medium text-amber-900 hover:text-amber-950 disabled:opacity-50"
+                        >
+                          <Mail size={16} />
+                          {sendingVerification ? 'Sending...' : 'Resend Verification Email'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
