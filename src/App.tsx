@@ -54,7 +54,7 @@ function AppContent() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onViewChange={setCurrentView} />;
       case 'recipes':
         return <RecipesView />;
       case 'meal-plan':
@@ -66,7 +66,7 @@ function AppContent() {
       case 'settings':
         return <SettingsView />;
       default:
-        return <Dashboard />;
+        return <Dashboard onViewChange={setCurrentView} />;
     }
   };
 

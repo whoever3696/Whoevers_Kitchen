@@ -1,7 +1,11 @@
 import { Calendar, Package, ShoppingCart, Users, Clock } from 'lucide-react';
 import { useHousehold } from '../../contexts/HouseholdContext';
 
-export function Dashboard() {
+interface DashboardProps {
+  onViewChange: (view: string) => void;
+}
+
+export function Dashboard({ onViewChange }: DashboardProps) {
   const { household, members } = useHousehold();
 
   const stats = [
@@ -85,27 +89,36 @@ export function Dashboard() {
         <h3 className="text-2xl font-bold mb-2">Quick Start Guide</h3>
         <p className="mb-6 opacity-90">Get the most out of Whoever's Kitchen</p>
         <div className="grid md:grid-cols-3 gap-4">
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+          <button
+            onClick={() => onViewChange('ingredients')}
+            className="bg-white/10 backdrop-blur rounded-lg p-4 text-left transition-all hover:bg-white/20 hover:scale-105 hover:shadow-xl cursor-pointer"
+          >
             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mb-3 font-bold">
               1
             </div>
             <h4 className="font-semibold mb-1">Add Ingredients</h4>
             <p className="text-sm opacity-90">Track what you have in your pantry, fridge, and freezer</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+          </button>
+          <button
+            onClick={() => onViewChange('recipes')}
+            className="bg-white/10 backdrop-blur rounded-lg p-4 text-left transition-all hover:bg-white/20 hover:scale-105 hover:shadow-xl cursor-pointer"
+          >
             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mb-3 font-bold">
               2
             </div>
             <h4 className="font-semibold mb-1">Browse Recipes</h4>
             <p className="text-sm opacity-90">Discover recipes based on what you already have</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+          </button>
+          <button
+            onClick={() => onViewChange('meal-plan')}
+            className="bg-white/10 backdrop-blur rounded-lg p-4 text-left transition-all hover:bg-white/20 hover:scale-105 hover:shadow-xl cursor-pointer"
+          >
             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mb-3 font-bold">
               3
             </div>
             <h4 className="font-semibold mb-1">Plan Meals</h4>
             <p className="text-sm opacity-90">Schedule your weekly meals and generate grocery lists</p>
-          </div>
+          </button>
         </div>
       </div>
 
