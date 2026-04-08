@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Home, Target, Bell, ChefHat, Plus, CreditCard as Edit, Trash2, Users, Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Home, Target, Bell, ChefHat, Plus, Pencil, Trash2, Users, Mail, CheckCircle, AlertCircle, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useHousehold } from '../../contexts/HouseholdContext';
 import { useKitchen } from '../../contexts/KitchenContext';
@@ -10,7 +10,7 @@ import { DietaryGoalsView } from '../dietary/DietaryGoalsView';
 
 export function SettingsView() {
   const { user, isEmailVerified, resendVerificationEmail } = useAuth();
-  const { household, members, dependents } = useHousehold();
+  const { household, members, dependents, setActiveKitchen } = useHousehold();
   const { locations, loading, fetchLocations, deleteKitchenLocation } = useKitchen();
   const [showKitchenSetup, setShowKitchenSetup] = useState(false);
   const [editingLocation, setEditingLocation] = useState<string | null>(null);
@@ -18,6 +18,7 @@ export function SettingsView() {
   const [showDietaryGoals, setShowDietaryGoals] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState('');
+  const [settingActiveKitchen, setSettingActiveKitchen] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLocations();
@@ -36,9 +37,21 @@ export function SettingsView() {
     }
   };
 
+  const handleSetActiveKitchen = async (location: string) => {
+    setSettingActiveKitchen(location);
+    const { error } = await setActiveKitchen(location);
+    if (error) {
+      alert('Failed to set active kitchen. Please try again.');
+    }
+    setSettingActiveKitchen(null);
+  };
+
   const handleDeleteLocation = async (location: string) => {
     if (confirm(`Are you sure you want to delete the "${location}" kitchen? This will remove all associated appliances and implements.`)) {
       try {
+        if (household?.active_kitchen_location === location) {
+          await setActiveKitchen(null);
+        }
         await deleteKitchenLocation(location);
       } catch (error) {
         alert('Failed to delete kitchen location. Please try again.');
@@ -284,35 +297,70 @@ export function SettingsView() {
                 </button>
               </div>
             ) : (
-              locations.map((loc) => (
-                <div
-                  key={loc.location}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-                >
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{loc.location}</h4>
-                    <p className="text-sm text-gray-600">
-                      {loc.applianceCount} appliances, {loc.implementCount} tools
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
+              locations.map((loc) => {
+                const isActive = household?.active_kitchen_location === loc.location;
+                const isUpdating = settingActiveKitchen === loc.location;
+                return (
+                  <div
+                    key={loc.location}
+                    className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
+                      isActive
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
                     <button
-                      onClick={() => setEditingLocation(loc.location)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit kitchen"
+                      onClick={() => !isActive && handleSetActiveKitchen(loc.location)}
+                      disabled={isUpdating}
+                      className="flex-1 text-left cursor-pointer disabled:cursor-wait"
+                      title={isActive ? 'Currently active kitchen' : 'Click to set as active kitchen'}
                     >
-                      <Edit size={18} />
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex items-center justify-center w-6 h-6 rounded-full transition-colors ${
+                            isActive
+                              ? 'bg-green-600 text-white'
+                              : 'border-2 border-gray-300 text-transparent'
+                          }`}
+                        >
+                          <Check size={16} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className={`font-semibold ${isActive ? 'text-green-900' : 'text-gray-900'}`}>
+                              {loc.location}
+                            </h4>
+                            {isActive && (
+                              <span className="px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded-full">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-sm ${isActive ? 'text-green-700' : 'text-gray-600'}`}>
+                            {loc.applianceCount} appliances, {loc.implementCount} tools
+                          </p>
+                        </div>
+                      </div>
                     </button>
-                    <button
-                      onClick={() => handleDeleteLocation(loc.location)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete kitchen"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => setEditingLocation(loc.location)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit kitchen"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLocation(loc.location)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete kitchen"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

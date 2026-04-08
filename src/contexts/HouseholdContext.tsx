@@ -19,6 +19,7 @@ interface HouseholdContextType {
   addDependent: (name: string, ageGroup?: 'child' | 'teen' | 'adult', dietaryRestrictions?: string) => Promise<{ error: Error | null }>;
   updateDependent: (id: string, name: string, ageGroup?: 'child' | 'teen' | 'adult', dietaryRestrictions?: string) => Promise<{ error: Error | null }>;
   removeDependent: (id: string) => Promise<{ error: Error | null }>;
+  setActiveKitchen: (location: string | null) => Promise<{ error: Error | null }>;
 }
 
 const HouseholdContext = createContext<HouseholdContextType | undefined>(undefined);
@@ -265,6 +266,24 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setActiveKitchen = async (location: string | null) => {
+    if (!user || !household) return { error: new Error('No household selected') };
+
+    try {
+      const { error } = await supabase
+        .from('households')
+        .update({ active_kitchen_location: location })
+        .eq('id', household.id);
+
+      if (error) throw error;
+
+      await fetchHousehold();
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   return (
     <HouseholdContext.Provider
       value={{
@@ -279,6 +298,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         addDependent,
         updateDependent,
         removeDependent,
+        setActiveKitchen,
       }}
     >
       {children}
