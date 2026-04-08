@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHousehold } from '../../contexts/HouseholdContext';
-import { Home, Users, ArrowRight } from 'lucide-react';
+import { Home, Users, ArrowRight, Plus } from 'lucide-react';
 import { KitchenSetup } from './KitchenSetup';
 
 interface HouseholdSetupProps {
@@ -211,6 +211,22 @@ export function HouseholdSetup({ onComplete }: HouseholdSetupProps) {
           </button>
         </div>
       </form>
+
+      <div className="mt-6">
+        <div className="relative flex items-center">
+          <div className="flex-1 border-t border-gray-200" />
+          <span className="px-4 text-sm text-gray-500 bg-transparent">or</span>
+          <div className="flex-1 border-t border-gray-200" />
+        </div>
+        <button
+          type="button"
+          onClick={() => setMode('create')}
+          className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 border-2 border-orange-300 rounded-lg font-medium text-orange-700 hover:bg-orange-50 hover:border-orange-500 transition-all"
+        >
+          <Plus size={18} />
+          Start a New Household
+        </button>
+      </div>
     </div>
   );
 }
