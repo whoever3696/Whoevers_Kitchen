@@ -1,24 +1,134 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Pencil, Trash2, AlertCircle, Search, Sparkles, AlertTriangle, ShoppingCart } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, AlertCircle, Search, Sparkles, AlertTriangle, ShoppingCart, Receipt, X } from 'lucide-react';
 import { useIngredient } from '../../contexts/IngredientContext';
 import { useGrocery } from '../../contexts/GroceryContext';
 import { AddIngredientModal } from './AddIngredientModal';
 import { QuickAddModal } from './QuickAddModal';
+import ReceiptScannerModal from './ReceiptScannerModal';
+import ReceiptProcessingModal from './ReceiptProcessingModal';
+import ReceiptReviewModal from './ReceiptReviewModal';
+import { parseReceiptText, ParsedReceipt } from '../../utils/receiptParser';
+import { findIngredientMatches, IngredientMatch } from '../../utils/ingredientMatcher';
+import { supabase } from '../../lib/supabase';
+import { useHousehold } from '../../contexts/HouseholdContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 type StorageTab = 'all' | 'pantry' | 'fridge' | 'freezer';
 
+interface ReviewItem {
+  itemName: string;
+  quantity: number;
+  unit: string;
+  price: number | null;
+  confidence: 'high' | 'medium' | 'low';
+  rawLine: string;
+  selected: boolean;
+  matchedIngredient: IngredientMatch | null;
+  storageLocation: 'pantry' | 'fridge' | 'freezer';
+  expirationDays: number | null;
+}
+
 export function IngredientsView() {
-  const { householdIngredients, loading, fetchHouseholdIngredients, deleteIngredient } = useIngredient();
+  const { householdIngredients, loading, fetchHouseholdIngredients, deleteIngredient, addIngredient, masterIngredients, fetchMasterIngredients } = useIngredient();
   const { addGroceryItem } = useGrocery();
+  const { household } = useHousehold();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<StorageTab>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [isReceiptScannerOpen, setIsReceiptScannerOpen] = useState(false);
+  const [receiptImage, setReceiptImage] = useState<File | null>(null);
+  const [parsedReceipt, setParsedReceipt] = useState<ParsedReceipt | null>(null);
+  const [ingredientMatches, setIngredientMatches] = useState<Map<string, IngredientMatch[]>>(new Map());
+  const [processingError, setProcessingError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchHouseholdIngredients();
   }, [fetchHouseholdIngredients]);
+
+  useEffect(() => {
+    fetchMasterIngredients();
+  }, [fetchMasterIngredients]);
+
+  const handleImageSelected = (file: File) => {
+    setReceiptImage(file);
+    setIsReceiptScannerOpen(false);
+    setProcessingError(null);
+  };
+
+  const handleOCRComplete = (text: string, confidence: number) => {
+    const parsed = parseReceiptText(text);
+
+    const matches = new Map<string, IngredientMatch[]>();
+    for (const item of parsed.items) {
+      const itemMatches = findIngredientMatches(item.itemName, masterIngredients);
+      matches.set(item.itemName, itemMatches);
+    }
+
+    setParsedReceipt(parsed);
+    setIngredientMatches(matches);
+    setReceiptImage(null);
+  };
+
+  const handleOCRError = (error: string) => {
+    setProcessingError(error);
+    setReceiptImage(null);
+  };
+
+  const handleConfirmReceipt = async (items: ReviewItem[]) => {
+    if (!household?.id || !user?.id) return;
+
+    try {
+      const { data: receiptScan, error: receiptError } = await supabase
+        .from('receipt_scans')
+        .insert({
+          household_id: household.id,
+          store_name: parsedReceipt?.storeName,
+          purchase_date: parsedReceipt?.purchaseDate,
+          total_amount: parsedReceipt?.totalAmount,
+          item_count: items.length,
+          scanned_by: user.id,
+        })
+        .select()
+        .single();
+
+      if (receiptError) throw receiptError;
+
+      const purchaseDate = parsedReceipt?.purchaseDate || new Date().toISOString().split('T')[0];
+
+      for (const item of items) {
+        await addIngredient({
+          ingredientId: item.matchedIngredient?.ingredientId || null,
+          customName: item.matchedIngredient ? undefined : item.itemName,
+          quantity: item.quantity,
+          unit: item.unit,
+          storageLocation: item.storageLocation,
+          expirationDate: item.expirationDays
+            ? new Date(Date.now() + item.expirationDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+            : undefined,
+        });
+
+        await supabase.from('receipt_items').insert({
+          receipt_scan_id: receiptScan.id,
+          item_name: item.itemName,
+          quantity: item.quantity,
+          unit: item.unit,
+          price: item.price,
+          ingredient_id: item.matchedIngredient?.ingredientId || null,
+        });
+      }
+
+      setParsedReceipt(null);
+      setIngredientMatches(new Map());
+      alert(`Successfully added ${items.length} items to your inventory!`);
+    } catch (error) {
+      console.error('Error saving receipt items:', error);
+      alert('Failed to save receipt items. Please try again.');
+    }
+  };
 
   const handleEdit = (ingredient: any) => {
     setEditingIngredient(ingredient);
@@ -124,13 +234,22 @@ export function IngredientsView() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Ingredients</h2>
           <p className="text-gray-600">Manage your kitchen inventory</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add Ingredient
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsReceiptScannerOpen(true)}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            <Receipt size={20} />
+            Scan Receipt
+          </button>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 transition-colors"
+          >
+            <Plus size={20} />
+            Add Ingredient
+          </button>
+        </div>
       </div>
 
       {(expiringCount > 0 || expiredCount > 0) && (
@@ -406,6 +525,52 @@ export function IngredientsView() {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
       />
+
+      {isReceiptScannerOpen && (
+        <ReceiptScannerModal
+          onClose={() => setIsReceiptScannerOpen(false)}
+          onImageSelected={handleImageSelected}
+        />
+      )}
+
+      {receiptImage && (
+        <ReceiptProcessingModal
+          imageFile={receiptImage}
+          onComplete={handleOCRComplete}
+          onError={handleOCRError}
+          onClose={() => setReceiptImage(null)}
+        />
+      )}
+
+      {parsedReceipt && (
+        <ReceiptReviewModal
+          parsedReceipt={parsedReceipt}
+          ingredientMatches={ingredientMatches}
+          onClose={() => {
+            setParsedReceipt(null);
+            setIngredientMatches(new Map());
+          }}
+          onConfirm={handleConfirmReceipt}
+        />
+      )}
+
+      {processingError && (
+        <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg max-w-md z-50">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-900">Receipt Scanning Error</p>
+              <p className="text-sm text-red-700 mt-1">{processingError}</p>
+            </div>
+            <button
+              onClick={() => setProcessingError(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
